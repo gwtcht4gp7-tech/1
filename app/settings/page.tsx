@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { ClearDataForm } from "@/components/settings/clear-data-form";
 import { ExportButtons } from "@/components/settings/export-buttons";
 import { LanguageForm } from "@/components/settings/language-form";
+import { LogoutForm } from "@/components/settings/logout-form";
 import { getCurrentUser } from "@/lib/auth";
 import { getLocale, isChinese } from "@/lib/i18n";
 
@@ -49,6 +50,14 @@ export default async function SettingsPage() {
               <dd className="text-zinc-600">SQLite via Prisma</dd>
             </div>
           </dl>
+          <div className="mt-5 border-t border-zinc-100 pt-5">
+            <p className="mb-3 text-sm text-zinc-600">
+              {zh
+                ? "退出后，你的本地账户和数据仍会保留在这台设备上。"
+                : "Signing out keeps your local account and data on this device."}
+            </p>
+            <LogoutForm zh={zh} />
+          </div>
         </div>
 
         <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
