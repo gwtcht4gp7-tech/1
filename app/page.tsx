@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LocalContextCard } from "@/components/dashboard/local-context-card";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -98,6 +99,8 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      <LocalContextCard zh={zh} />
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">

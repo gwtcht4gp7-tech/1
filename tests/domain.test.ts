@@ -7,6 +7,7 @@ import {
   normalizeTodoInput,
   parseDateInput,
 } from "../lib/domain.ts";
+import { formatCoordinate, getWeatherLabel } from "../lib/weather.ts";
 
 test("normalizes a valid todo input", () => {
   const result = normalizeTodoInput({
@@ -53,4 +54,11 @@ test("calculates current habit streak ending today", () => {
   );
 
   assert.equal(calculateCurrentStreak(checkIns, today), 3);
+});
+
+test("formats weather labels and coordinates", () => {
+  assert.equal(getWeatherLabel(0), "Clear sky");
+  assert.equal(getWeatherLabel(61, true), "小雨");
+  assert.equal(getWeatherLabel(999), "Unknown weather");
+  assert.equal(formatCoordinate(31.230416), "31.2304");
 });
