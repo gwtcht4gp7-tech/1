@@ -90,6 +90,7 @@ async function main() {
   await prisma.habitCheckIn.deleteMany({ where: { userId: user.id } });
   await prisma.habit.deleteMany({ where: { userId: user.id } });
   await prisma.transaction.deleteMany({ where: { userId: user.id } });
+  await prisma.marketAsset.deleteMany({ where: { userId: user.id } });
 
   await prisma.todo.createMany({
     data: [
@@ -170,6 +171,23 @@ async function main() {
         amount: 8650,
         note: "Metro card top-up",
         date: day("2026-06-01"),
+      },
+    ],
+  });
+
+  await prisma.marketAsset.createMany({
+    data: [
+      {
+        userId: user.id,
+        symbol: "AAPL",
+        name: "Apple",
+        type: "stock",
+      },
+      {
+        userId: user.id,
+        symbol: "BTC",
+        name: "Bitcoin",
+        type: "crypto",
       },
     ],
   });

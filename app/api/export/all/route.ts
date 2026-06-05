@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [todos, habits, habitCheckIns, transactions, categories] = await Promise.all([
+  const [todos, habits, habitCheckIns, transactions, categories, marketAssets] = await Promise.all([
     prisma.todo.findMany({ where: { userId: user.id } }),
     prisma.habit.findMany({ where: { userId: user.id } }),
     prisma.habitCheckIn.findMany({ where: { userId: user.id } }),
@@ -19,6 +19,7 @@ export async function GET() {
       include: { category: true },
     }),
     prisma.category.findMany({ where: { userId: user.id } }),
+    prisma.marketAsset.findMany({ where: { userId: user.id } }),
   ]);
   const date = formatDateInput(new Date());
 
@@ -36,6 +37,7 @@ export async function GET() {
         habitCheckIns,
         transactions,
         categories,
+        marketAssets,
       },
       null,
       2,

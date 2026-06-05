@@ -20,6 +20,7 @@ model User {
   habitCheckIns HabitCheckIn[]
   transactions  Transaction[]
   categories    Category[]
+  marketAssets  MarketAsset[]
 }
 
 model Session {
@@ -51,14 +52,14 @@ model Todo {
 }
 
 model Habit {
-  id              String            @id @default(cuid())
+  id              String          @id @default(cuid())
   name            String
   description     String?
-  targetFrequency TargetFrequency   @default(daily)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  targetFrequency TargetFrequency @default(daily)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   userId          String
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   checkIns        HabitCheckIn[]
 
   @@index([userId])
@@ -110,6 +111,20 @@ model Category {
   @@index([userId, type])
 }
 
+model MarketAsset {
+  id        String    @id @default(cuid())
+  symbol    String
+  name      String?
+  type      AssetType
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, symbol])
+  @@index([userId, type])
+}
+
 enum TodoPriority {
   low
   medium
@@ -124,4 +139,9 @@ enum TargetFrequency {
 enum TransactionType {
   income
   expense
+}
+
+enum AssetType {
+  stock
+  crypto
 }

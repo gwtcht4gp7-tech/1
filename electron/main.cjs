@@ -3,7 +3,7 @@ const { app, BrowserWindow, dialog, shell } = require("electron");
 const { createRequire } = require("node:module");
 const { createServer } = require("node:net");
 const { spawn } = require("node:child_process");
-const { existsSync, readFileSync } = require("node:fs");
+const { existsSync, readFileSync, readdirSync } = require("node:fs");
 const path = require("node:path");
 const { scrypt } = require("node:crypto");
 const { promisify } = require("node:util");
@@ -35,6 +35,22 @@ function splitSqlStatements(sql) {
         .trim(),
     )
     .filter(Boolean);
+}
+
+function listMigrationFiles(standaloneDir) {
+  const migrationsDir = path.join(standaloneDir, "prisma", "migrations");
+
+  if (!existsSync(migrationsDir)) {
+    return [];
+  }
+
+  return readdirSync(migrationsDir)
+    .sort()
+    .map((name) => ({
+      name,
+      path: path.join(migrationsDir, name, "migration.sql"),
+    }))
+    .filter((migration) => existsSync(migration.path));
 }
 
 async function hashPassword(password) {
@@ -172,6 +188,23 @@ async function seedDesktopData(prisma) {
       },
     ],
   });
+
+  await prisma.marketAsset.createMany({
+    data: [
+      {
+        userId: user.id,
+        symbol: "AAPL",
+        name: "Apple",
+        type: "stock",
+      },
+      {
+        userId: user.id,
+        symbol: "BTC",
+        name: "Bitcoin",
+        type: "crypto",
+      },
+    ],
+  });
 }
 
 async function initializeDesktopDatabase() {
@@ -181,23 +214,42 @@ async function initializeDesktopDatabase() {
   const prisma = new PrismaClient();
 
   try {
+    await prisma.$executeRawUnsafe(
+      'CREATE TABLE IF NOT EXISTS "_local_migrations" ("name" TEXT NOT NULL PRIMARY KEY, "appliedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)',
+    );
+
     const rows = await prisma.$queryRawUnsafe(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='User'",
     );
-
-    if (rows.length === 0) {
-      const migrationPath = path.join(
-        standaloneDir,
-        "prisma",
-        "migrations",
-        "20260604031000_add_productivity_models",
-        "migration.sql",
+    const hasUserTable = rows.length > 0;
+    const wasApplied = async (name) => {
+      const appliedRows = await prisma.$queryRawUnsafe(
+        'SELECT "name" FROM "_local_migrations" WHERE "name" = ?',
+        name,
       );
-      const migrationSql = readFileSync(migrationPath, "utf8");
+
+      return appliedRows.length > 0;
+    };
+    const markApplied = (name) =>
+      prisma.$executeRawUnsafe('INSERT OR IGNORE INTO "_local_migrations" ("name") VALUES (?)', name);
+
+    for (const migration of listMigrationFiles(standaloneDir)) {
+      if (await wasApplied(migration.name)) {
+        continue;
+      }
+
+      if (hasUserTable && migration.name === "20260604031000_add_productivity_models") {
+        await markApplied(migration.name);
+        continue;
+      }
+
+      const migrationSql = readFileSync(migration.path, "utf8");
 
       for (const statement of splitSqlStatements(migrationSql)) {
         await prisma.$executeRawUnsafe(statement);
       }
+
+      await markApplied(migration.name);
     }
 
     await seedDesktopData(prisma);

@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CategoryForm } from "@/components/finance/category-form";
+import { MarketAssetForm } from "@/components/finance/market-asset-form";
+import { MarketWatchlist } from "@/components/finance/market-watchlist";
 import { TransactionForm } from "@/components/finance/transaction-form";
 import { TransactionList } from "@/components/finance/transaction-list";
 import { getCurrentUser } from "@/lib/auth";
 import {
   ensureDefaultCategories,
   getCategories,
+  getMarketAssets,
   getMonthlyFinanceSummary,
   getTransactionsByFilters,
 } from "@/lib/db";
@@ -44,10 +47,11 @@ export default async function FinancePage({
   const params = await searchParams;
   const filters = getFilters(params);
   const month = parseMonthInput(filters.month) ?? new Date();
-  const [categories, summary, transactions] = await Promise.all([
+  const [categories, summary, transactions, marketAssets] = await Promise.all([
     getCategories(user.id),
     getMonthlyFinanceSummary(user.id, month),
     getTransactionsByFilters(user.id, filters),
+    getMarketAssets(user.id),
   ]);
   const balance = summary.income - summary.expense;
 
@@ -83,6 +87,20 @@ export default async function FinancePage({
           <p className="mt-2 text-3xl font-semibold">{formatMoney(balance)}</p>
         </div>
       </section>
+
+      <section className="grid gap-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+        <div>
+          <h2 className="text-lg font-semibold">{zh ? "行情关注" : "Market watchlist"}</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            {zh
+              ? "添加持仓或关注的股票、虚拟币，查看近 30 天简易价格走势。股票默认按美股代码查询，虚拟币支持 BTC、ETH、SOL 等常见代码。"
+              : "Add stocks or crypto you hold or watch, then view a simple 30 day price trend. Stocks default to US tickers; crypto supports common symbols like BTC, ETH, and SOL."}
+          </p>
+        </div>
+        <MarketAssetForm zh={zh} />
+      </section>
+
+      <MarketWatchlist assets={marketAssets} zh={zh} />
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">

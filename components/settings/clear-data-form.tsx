@@ -38,7 +38,7 @@ export function ClearDataForm({ zh = false }: Readonly<{ zh?: boolean }>) {
       <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
         {zh
           ? "这会永久删除你的待办、习惯、打卡、交易和分类。"
-          : "This permanently removes your todos, habits, check-ins, transactions, and categories."}
+          : "This permanently removes your todos, habits, check-ins, transactions, categories, and market watchlist."}
       </div>
       <label className="grid gap-2 text-sm font-medium text-zinc-700">
         {zh ? "输入 CLEAR 确认" : "Type CLEAR to confirm"}

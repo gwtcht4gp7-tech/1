@@ -32,6 +32,7 @@ export async function clearDemoDataAction(
   }
 
   await prisma.$transaction([
+    prisma.marketAsset.deleteMany({ where: { userId: user.id } }),
     prisma.transaction.deleteMany({ where: { userId: user.id } }),
     prisma.habitCheckIn.deleteMany({ where: { userId: user.id } }),
     prisma.habit.deleteMany({ where: { userId: user.id } }),

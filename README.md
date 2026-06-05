@@ -11,6 +11,7 @@ search, export, and installable PWA basics in one local-first app.
 - Todo CRUD with due dates, completion state, and `low` / `medium` / `high` priority
 - Habit CRUD with today check-in, undo check-in, current streak, and recent 7-day history
 - Finance tracking for income and expenses, category labels, month/type/category filters
+- Market watchlist for stock and crypto symbols with simple 30-day price trend cards
 - Settings page with JSON export, transaction CSV export, and guarded demo-data clearing
 - Global search across todos, habits, and transaction notes
 - PWA manifest, app icon, service worker, offline fallback, loading/error/not-found pages
@@ -100,6 +101,12 @@ npm run db:init
 npm run db:seed
 ```
 
+The finance market watchlist stores only the user's watched symbols locally.
+Live prices are fetched on demand from public market data providers. Stock
+symbols default to US tickers such as `AAPL` or `TSLA`; crypto supports common
+symbols such as `BTC`, `ETH`, and `SOL`. Market data requires network access and
+may be delayed or unavailable.
+
 `prisma migrate dev` currently returns an empty `Schema engine error` in this
 Windows and Node 24 environment when applying SQLite migrations. The migration
 SQL is checked in under `prisma/migrations`, and `npm run db:init` is the
@@ -150,6 +157,8 @@ types/        Shared TypeScript types
 
 - Replace the local migration fallback once Prisma migrate works cleanly in this environment.
 - Add richer charts for finance trends.
+- Add portfolio quantities, cost basis, and unrealized gain/loss tracking.
+- Add more market data providers and broader symbol search.
 - Add reminder notifications for habits and overdue todos.
 - Add offline write queue and conflict handling.
 - Add optional cloud sync.

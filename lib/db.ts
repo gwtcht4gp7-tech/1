@@ -237,6 +237,15 @@ export async function getRecentTransactions(userId: string, take = 10) {
   });
 }
 
+export async function getMarketAssets(userId: string) {
+  return prisma.marketAsset.findMany({
+    where: {
+      userId,
+    },
+    orderBy: [{ type: "asc" }, { createdAt: "asc" }],
+  });
+}
+
 export async function searchUserData(userId: string, query: string) {
   const term = query.trim();
 
