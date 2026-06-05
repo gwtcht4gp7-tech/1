@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sessions      Session[]
+  todos         Todo[]
+  habits        Habit[]
+  habitCheckIns HabitCheckIn[]
+  transactions  Transaction[]
+  categories    Category[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Todo {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  completed   Boolean      @default(false)
+  priority    TodoPriority @default(medium)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueDate])
+  @@index([userId, completed])
+}
+
+model Habit {
+  id              String            @id @default(cuid())
+  name            String
+  description     String?
+  targetFrequency TargetFrequency   @default(daily)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkIns        HabitCheckIn[]
+
+  @@index([userId])
+}
+
+model HabitCheckIn {
+  id        String   @id @default(cuid())
+  date      DateTime
+  createdAt DateTime @default(now())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([userId, date])
+}
+
+model Transaction {
+  id         String          @id @default(cuid())
+  amount     Int
+  type       TransactionType
+  note       String?
+  date       DateTime
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([categoryId])
+}
+
+model Category {
+  id           String          @id @default(cuid())
+  name         String
+  type         TransactionType
+  color        String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([userId, name, type])
+  @@index([userId, type])
+}
+
+enum TodoPriority {
+  low
+  medium
+  high
+}
+
+enum TargetFrequency {
+  daily
+  weekly
+}
+
+enum TransactionType {
+  income
+  expense
+}

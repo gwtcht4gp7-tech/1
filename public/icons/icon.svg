@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FocusBoard icon">
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+  <path fill="#ffffff" d="M144 150h224v42H144zM144 235h142v42H144zM144 320h186v42H144z"/>
+  <circle cx="372" cy="256" r="46" fill="#facc15"/>
+</svg>
