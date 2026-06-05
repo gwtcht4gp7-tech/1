@@ -25,6 +25,7 @@ search, export, and installable PWA basics in one local-first app.
 - Prisma
 - React Server Components and Server Actions
 - Node test runner
+- Electron and electron-builder for the optional Windows desktop app
 
 ## Local Setup
 
@@ -52,6 +53,39 @@ Open:
 
 ```text
 http://localhost:3000
+```
+
+## Desktop App
+
+Run the app in an Electron desktop window during development:
+
+```bash
+npm run desktop:dev
+```
+
+Create an unpacked Windows desktop build:
+
+```bash
+npm run desktop:pack
+```
+
+Create a Windows installer:
+
+```bash
+npm run desktop:dist
+```
+
+The installer is written to `dist/FocusBoard Setup 0.1.0.exe`. The desktop app
+starts a private local Next.js server, opens it in an Electron window, and stores
+its SQLite database in the current Windows user's app data folder. On first
+desktop launch, it creates the database schema and demo account automatically.
+The installer uses the FocusBoard icon and only packages the Next.js standalone
+runtime to avoid duplicating production dependencies.
+
+Demo account:
+
+```text
+demo@example.com / password123
 ```
 
 ## Database
@@ -103,6 +137,7 @@ available, with `public/offline.html` as the fallback.
 ```text
 app/          App Router pages, route handlers, and server actions
 components/   Shared UI and feature components
+electron/     Electron main process for the Windows desktop app
 lib/          Auth, Prisma client, database query helpers, domain logic
 prisma/       Schema, migration SQL, and seed data
 public/       PWA icon, service worker, and offline page
@@ -118,3 +153,4 @@ types/        Shared TypeScript types
 - Add reminder notifications for habits and overdue todos.
 - Add offline write queue and conflict handling.
 - Add optional cloud sync.
+- Add signed desktop releases and auto-update support.

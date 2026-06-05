@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 const scryptAsync = promisify(scrypt);
 const sessionCookieName = "new-project-2-session";
 const sessionDurationMs = 1000 * 60 * 60 * 24 * 7;
+const isDesktop = process.env.FOCUSBOARD_DESKTOP === "1";
 
 export type AuthUser = {
   id: string;
@@ -56,7 +57,7 @@ export async function createSession(userId: string) {
   cookieStore.set(sessionCookieName, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" && !isDesktop,
     path: "/",
     expires: expiresAt,
   });

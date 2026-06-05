@@ -1,19 +1,27 @@
 {
-  "name": "new-project-2",
+  "name": "focusboard",
   "version": "0.1.0",
+  "description": "A local-first personal productivity dashboard.",
+  "author": "gwtcht4gp7-tech",
   "type": "module",
+  "main": "electron/main.cjs",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "postinstall": "node scripts/install-electron-runtime.mjs",
     "test": "node --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:init": "node scripts/init-db.mjs",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "desktop:dev": "node scripts/desktop-dev.mjs",
+    "desktop:prepare": "npm run build && node scripts/prepare-desktop.mjs",
+    "desktop:pack": "npm run desktop:prepare && node scripts/build-desktop.mjs --dir",
+    "desktop:dist": "npm run desktop:prepare && node scripts/build-desktop.mjs --win nsis"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -26,10 +34,51 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "electron": "^42.3.3",
+    "electron-builder": "^26.8.1",
     "eslint": "latest",
     "eslint-config-next": "latest",
     "prisma": "^6.19.3",
     "tailwindcss": "latest",
     "typescript": "latest"
+  },
+  "overrides": {
+    "postcss": "^8.5.15"
+  },
+  "build": {
+    "appId": "local.focusboard.desktop",
+    "productName": "FocusBoard",
+    "asar": false,
+    "electronDist": "node_modules/electron/dist",
+    "extraMetadata": {
+      "dependencies": {}
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      ".next/standalone/**/*",
+      "package.json",
+      "!node_modules/**"
+    ],
+    "win": {
+      "icon": "public/icons/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
