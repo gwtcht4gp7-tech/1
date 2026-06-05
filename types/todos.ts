@@ -1,6 +1,6 @@
 import type { TodoPriorityValue } from "@/lib/domain";
 
-export type TodoFilter = "today" | "future" | "completed";
+export type TodoFilter = "today" | "overdue" | "future" | "completed";
 
 export type TodoFormValues = {
   id?: string;

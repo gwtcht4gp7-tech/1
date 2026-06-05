@@ -26,6 +26,21 @@ export async function getTodosByDate(userId: string, date: Date) {
   });
 }
 
+export async function getOverdueTodos(userId: string, today = new Date()) {
+  const { start } = getDayRange(today);
+
+  return prisma.todo.findMany({
+    where: {
+      userId,
+      completed: false,
+      dueDate: {
+        lt: start,
+      },
+    },
+    orderBy: [{ dueDate: "asc" }, { priority: "desc" }, { createdAt: "asc" }],
+  });
+}
+
 export async function getTodosByFilter(userId: string, filter: TodoFilter, today = new Date()) {
   const { start, end } = getDayRange(today);
   const where: Prisma.TodoWhereInput = { userId };
@@ -34,6 +49,13 @@ export async function getTodosByFilter(userId: string, filter: TodoFilter, today
     where.dueDate = {
       gte: start,
       lt: end,
+    };
+  }
+
+  if (filter === "overdue") {
+    where.completed = false;
+    where.dueDate = {
+      lt: start,
     };
   }
 

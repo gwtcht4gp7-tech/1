@@ -9,12 +9,28 @@ import type { TodoFilter } from "@/types/todos";
 
 const filters: Array<{ value: TodoFilter; label: string }> = [
   { value: "today", label: "Today" },
+  { value: "overdue", label: "Overdue" },
   { value: "future", label: "Future" },
   { value: "completed", label: "Completed" },
 ];
 
 function getFilter(value: string | string[] | undefined): TodoFilter {
-  return value === "future" || value === "completed" ? value : "today";
+  return value === "overdue" || value === "future" || value === "completed" ? value : "today";
+}
+
+function getFilterLabel(filter: TodoFilter, zh: boolean) {
+  if (!zh) {
+    return filters.find((item) => item.value === filter)?.label ?? filter;
+  }
+
+  const labels: Record<TodoFilter, string> = {
+    completed: "已完成",
+    future: "未来",
+    overdue: "逾期",
+    today: "今天",
+  };
+
+  return labels[filter];
 }
 
 export default async function TodosPage({
@@ -74,13 +90,7 @@ export default async function TodosPage({
               href={`/todos?filter=${filter.value}`}
               key={filter.value}
             >
-              {zh
-                ? filter.value === "today"
-                  ? "今天"
-                  : filter.value === "future"
-                    ? "未来"
-                    : "已完成"
-                : filter.label}
+              {getFilterLabel(filter.value, zh)}
             </Link>
           );
         })}
