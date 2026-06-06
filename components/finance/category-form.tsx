@@ -1,19 +1,31 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import type { FinanceActionState } from "@/app/actions/finance";
 import { createCategoryAction } from "@/app/actions/finance";
 import { SubmitButton } from "@/components/form-buttons";
 import { transactionTypes } from "@/lib/domain";
 
 export function CategoryForm({ zh = false }: Readonly<{ zh?: boolean }>) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   const [state, formAction] = useActionState<FinanceActionState, FormData>(
     createCategoryAction,
     {},
   );
 
+  useEffect(() => {
+    if (!state.success) {
+      return;
+    }
+
+    formRef.current?.reset();
+    router.refresh();
+  }, [router, state.success]);
+
   return (
-    <form action={formAction} className="grid gap-3">
+    <form action={formAction} className="grid gap-3" ref={formRef}>
       {state.error ? (
         <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
           {state.error}

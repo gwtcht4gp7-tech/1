@@ -1,7 +1,8 @@
 "use client";
 
 import type { Category, Transaction } from "@prisma/client";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import type { FinanceActionState } from "@/app/actions/finance";
 import {
   createTransactionAction,
@@ -24,11 +25,25 @@ export function TransactionForm({
   initialValues?: Transaction;
   zh?: boolean;
 }>) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   const action = mode === "create" ? createTransactionAction : updateTransactionAction;
   const [state, formAction] = useActionState<FinanceActionState, FormData>(action, {});
 
+  useEffect(() => {
+    if (!state.success) {
+      return;
+    }
+
+    if (mode === "create") {
+      formRef.current?.reset();
+    }
+
+    router.refresh();
+  }, [mode, router, state.success]);
+
   return (
-    <form action={formAction} className="grid gap-4">
+    <form action={formAction} className="grid gap-4" ref={formRef}>
       {initialValues ? <input name="id" type="hidden" value={initialValues.id} /> : null}
 
       {state.error ? (

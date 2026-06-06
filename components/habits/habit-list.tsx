@@ -116,7 +116,9 @@ export function HabitList({
                 <input name="id" type="hidden" value={habit.id} />
                 <ConfirmSubmitButton
                   className="h-9 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700"
+                  confirmLabel={zh ? "确认删除" : "Confirm delete"}
                   message={`Delete "${habit.name}" and its check-ins?`}
+                  pendingLabel={zh ? "删除中..." : "Deleting..."}
                 >
                   {zh ? "删除" : "Delete"}
                 </ConfirmSubmitButton>

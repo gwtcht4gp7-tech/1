@@ -81,7 +81,9 @@ function MarketAssetCard({ asset, zh = false }: Readonly<{ asset: MarketAsset; z
           <input name="id" type="hidden" value={asset.id} />
           <ConfirmSubmitButton
             className="h-8 rounded-md border border-red-200 px-3 text-xs font-medium text-red-700"
+            confirmLabel={zh ? "确认删除" : "Confirm delete"}
             message={zh ? "删除这个关注标的吗？" : "Delete this watched asset?"}
+            pendingLabel={zh ? "删除中..." : "Deleting..."}
           >
             {zh ? "删除" : "Delete"}
           </ConfirmSubmitButton>

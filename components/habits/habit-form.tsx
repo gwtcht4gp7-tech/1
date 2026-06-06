@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import type { HabitActionState } from "@/app/actions/habits";
 import { createHabitAction, updateHabitAction } from "@/app/actions/habits";
 import { SubmitButton } from "@/components/form-buttons";
@@ -23,11 +24,25 @@ export function HabitForm({
   };
   zh?: boolean;
 }>) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   const action = mode === "create" ? createHabitAction : updateHabitAction;
   const [state, formAction] = useActionState<HabitActionState, FormData>(action, {});
 
+  useEffect(() => {
+    if (!state.success) {
+      return;
+    }
+
+    if (mode === "create") {
+      formRef.current?.reset();
+    }
+
+    router.refresh();
+  }, [mode, router, state.success]);
+
   return (
-    <form action={formAction} className="grid gap-4">
+    <form action={formAction} className="grid gap-4" ref={formRef}>
       {initialValues?.id ? <input name="id" type="hidden" value={initialValues.id} /> : null}
 
       {state.error ? (

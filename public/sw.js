@@ -1,5 +1,24 @@
-const CACHE_NAME = "focusboard-v1";
-const STATIC_ASSETS = ["/", "/offline.html", "/icons/icon.svg", "/manifest.webmanifest"];
+const CACHE_NAME = "focusboard-v2";
+const STATIC_ASSETS = ["/offline.html", "/icons/icon.svg", "/manifest.webmanifest"];
+
+function isNextDynamicRequest(request, url) {
+  return (
+    url.pathname.startsWith("/api/") ||
+    url.searchParams.has("_rsc") ||
+    request.headers.get("RSC") === "1" ||
+    request.headers.has("Next-Router-State-Tree") ||
+    request.headers.has("Next-Router-Prefetch")
+  );
+}
+
+function isStaticAsset(url) {
+  return (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname === "/manifest.webmanifest" ||
+    url.pathname === "/offline.html"
+  );
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -25,6 +44,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (isNextDynamicRequest(request, url)) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -41,6 +65,11 @@ self.addEventListener("fetch", (event) => {
           );
         }),
     );
+    return;
+  }
+
+  if (!isStaticAsset(url)) {
+    event.respondWith(fetch(request));
     return;
   }
 

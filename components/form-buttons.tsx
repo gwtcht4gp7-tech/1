@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 export function SubmitButton({
@@ -27,26 +28,43 @@ export function SubmitButton({
 export function ConfirmSubmitButton({
   children,
   className,
+  confirmLabel = "Confirm",
   message,
+  pendingLabel = "Deleting...",
 }: Readonly<{
   children: React.ReactNode;
   className?: string;
+  confirmLabel?: string;
   message: string;
+  pendingLabel?: string;
 }>) {
   const { pending } = useFormStatus();
+  const [armed, setArmed] = useState(false);
+
+  useEffect(() => {
+    if (!armed) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setArmed(false), 4000);
+
+    return () => window.clearTimeout(timer);
+  }, [armed]);
 
   return (
     <button
+      aria-label={armed ? confirmLabel : message}
       className={className}
       disabled={pending}
       onClick={(event) => {
-        if (!window.confirm(message)) {
+        if (!armed) {
           event.preventDefault();
+          setArmed(true);
         }
       }}
       type="submit"
     >
-      {pending ? "Deleting..." : children}
+      {pending ? pendingLabel : armed ? confirmLabel : children}
     </button>
   );
 }
