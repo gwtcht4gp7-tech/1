@@ -11,6 +11,7 @@ import { formatCoordinate, getWeatherLabel } from "../lib/weather.ts";
 import {
   buildSparklinePath,
   getPriceChange,
+  getMarketStats,
   normalizeMarketAssetInput,
 } from "../lib/market.ts";
 
@@ -88,4 +89,22 @@ test("calculates market price change and sparkline path", () => {
 
   assert.deepEqual(getPriceChange(points), { absolute: 5, percent: 50 });
   assert.match(buildSparklinePath(points), /^M 0\.00 72\.00 L 120\.00/);
+});
+
+test("calculates OHLC market stats", () => {
+  const points = [
+    { date: "2026-06-01", open: 10, high: 13, low: 9, close: 12, price: 12, volume: 1000 },
+    { date: "2026-06-02", open: 12, high: 16, low: 11, close: 15, price: 15, volume: 2000 },
+  ];
+
+  assert.deepEqual(getMarketStats(points), {
+    absolute: 3,
+    high: 16,
+    latestClose: 15,
+    latestDate: "2026-06-02",
+    low: 9,
+    open: 12,
+    percent: 25,
+    volume: 2000,
+  });
 });

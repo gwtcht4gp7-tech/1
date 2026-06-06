@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { LocalContextCard } from "@/components/dashboard/local-context-card";
+import { MarketWatchlist } from "@/components/finance/market-watchlist";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getHabitsWithRecentCheckIns,
+  getMarketAssets,
   getMonthlyFinanceSummary,
   getOverdueTodos,
   getRecentTransactions,
@@ -22,12 +24,13 @@ export default async function DashboardPage() {
   const locale = await getLocale();
   const zh = isChinese(locale);
   const today = new Date();
-  const [todos, overdueTodos, habits, monthlySummary, transactions] = await Promise.all([
+  const [todos, overdueTodos, habits, monthlySummary, transactions, marketAssets] = await Promise.all([
     getTodosByFilter(user.id, "today", today),
     getOverdueTodos(user.id, today),
     getHabitsWithRecentCheckIns(user.id, today),
     getMonthlyFinanceSummary(user.id, today),
     getRecentTransactions(user.id, 3),
+    getMarketAssets(user.id),
   ]);
   const todayKey = formatDateInput(today);
   const completedHabits = habits.filter((habit) =>
@@ -117,6 +120,34 @@ export default async function DashboardPage() {
           <p className="text-sm text-zinc-500">{zh ? "本月结余" : "Month balance"}</p>
           <p className="mt-2 text-3xl font-semibold">{formatMoney(balance)}</p>
         </div>
+      </section>
+
+      <section className="grid gap-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">{zh ? "金融行情" : "Market overview"}</h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              {zh
+                ? "查看你关注的股票和虚拟币近 30 天 K 线、涨跌和区间价格。"
+                : "Track watched stocks and crypto with 30 day candlesticks, movement, and ranges."}
+            </p>
+          </div>
+          <Link className="text-sm font-medium text-teal-700" href="/finance">
+            {zh ? "管理关注" : "Manage watchlist"}
+          </Link>
+        </div>
+        <MarketWatchlist
+          assets={marketAssets}
+          compact
+          maxItems={2}
+          showActions={false}
+          zh={zh}
+        />
+        {marketAssets.length > 2 ? (
+          <Link className="text-sm font-medium text-teal-700" href="/finance">
+            {zh ? `查看全部 ${marketAssets.length} 个关注标的` : `View all ${marketAssets.length} watched assets`}
+          </Link>
+        ) : null}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">

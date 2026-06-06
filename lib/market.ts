@@ -70,6 +70,45 @@ export function getPriceChange(points: MarketPoint[]) {
   return { absolute, percent };
 }
 
+export function getMarketStats(points: MarketPoint[]) {
+  if (points.length === 0) {
+    return null;
+  }
+
+  const latest = points.at(-1);
+  const previous = points.at(-2);
+
+  if (!latest) {
+    return null;
+  }
+
+  const latestClose = latest.close ?? latest.price;
+  const previousClose = previous ? previous.close ?? previous.price : latestClose;
+  const absolute = latestClose - previousClose;
+  const percent = previousClose === 0 ? 0 : (absolute / previousClose) * 100;
+  const highs = points.map((point) => point.high ?? point.close ?? point.price);
+  const lows = points.map((point) => point.low ?? point.close ?? point.price);
+  const volumes = points.map((point) => point.volume ?? 0);
+
+  return {
+    absolute,
+    high: Math.max(...highs),
+    latestClose,
+    latestDate: latest.date,
+    low: Math.min(...lows),
+    open: latest.open ?? previousClose,
+    percent,
+    volume: volumes.at(-1) ?? 0,
+  };
+}
+
+export function formatCompactNumber(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: value >= 1000 ? 1 : 2,
+    notation: value >= 10000 ? "compact" : "standard",
+  }).format(value);
+}
+
 export function buildSparklinePath(points: MarketPoint[], width = 240, height = 72) {
   if (points.length < 2) {
     return "";
@@ -117,6 +156,10 @@ export async function fetchStockQuote(symbol: string): Promise<MarketQuote> {
         indicators?: {
           quote?: Array<{
             close?: Array<number | null>;
+            high?: Array<number | null>;
+            low?: Array<number | null>;
+            open?: Array<number | null>;
+            volume?: Array<number | null>;
           }>;
         };
         meta?: {
@@ -132,16 +175,33 @@ export async function fetchStockQuote(symbol: string): Promise<MarketQuote> {
   };
   const result = data.chart?.result?.[0];
   const timestamps = result?.timestamp ?? [];
-  const closes = result?.indicators?.quote?.[0]?.close ?? [];
+  const quote = result?.indicators?.quote?.[0];
+  const closes = quote?.close ?? [];
+  const highs = quote?.high ?? [];
+  const lows = quote?.low ?? [];
+  const opens = quote?.open ?? [];
+  const volumes = quote?.volume ?? [];
   const points = timestamps
-    .map((timestamp, index) => {
+    .map((timestamp, index): MarketPoint | null => {
       const close = parseNumber(closes[index]);
-      return close === null
-        ? null
-        : {
-            date: new Date(timestamp * 1000).toISOString().slice(0, 10),
-            price: close,
-          };
+      if (close === null) {
+        return null;
+      }
+
+      const open = parseNumber(opens[index]) ?? close;
+      const high = parseNumber(highs[index]) ?? close;
+      const low = parseNumber(lows[index]) ?? close;
+      const volume = parseNumber(volumes[index]) ?? 0;
+
+      return {
+        close,
+        date: new Date(timestamp * 1000).toISOString().slice(0, 10),
+        high,
+        low,
+        open,
+        price: close,
+        volume,
+      };
     })
     .filter((point): point is MarketPoint => point !== null)
     .slice(-30);
@@ -189,7 +249,11 @@ export async function fetchCryptoQuote(symbol: string): Promise<MarketQuote> {
     Data?: {
       Data?: Array<{
         close?: number;
+        high?: number;
+        low?: number;
+        open?: number;
         time?: number;
+        volumeto?: number;
       }>;
     };
     Message?: string;
@@ -197,8 +261,13 @@ export async function fetchCryptoQuote(symbol: string): Promise<MarketQuote> {
   };
   const points = (data.Data?.Data ?? [])
     .map((item) => ({
+      close: item.close ?? Number.NaN,
       date: new Date((item.time ?? 0) * 1000).toISOString().slice(0, 10),
+      high: item.high ?? item.close ?? Number.NaN,
+      low: item.low ?? item.close ?? Number.NaN,
+      open: item.open ?? item.close ?? Number.NaN,
       price: item.close ?? Number.NaN,
+      volume: item.volumeto ?? 0,
     }))
     .filter((point) => Number.isFinite(point.price))
     .slice(-30);

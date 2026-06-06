@@ -1,10 +1,10 @@
 "use client";
 
 import type { MarketAsset } from "@prisma/client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { deleteMarketAssetAction } from "@/app/actions/market";
+import { MarketChart } from "@/components/finance/market-chart";
 import { ConfirmSubmitButton } from "@/components/form-buttons";
-import { buildSparklinePath, formatMarketPrice, getPriceChange } from "@/lib/market";
 import type { MarketQuote } from "@/types/market";
 
 type QuoteState =
@@ -56,14 +56,18 @@ function useMarketQuote(asset: MarketAsset) {
   return state;
 }
 
-function MarketAssetCard({ asset, zh = false }: Readonly<{ asset: MarketAsset; zh?: boolean }>) {
+function MarketAssetCard({
+  asset,
+  compact = false,
+  showActions = true,
+  zh = false,
+}: Readonly<{
+  asset: MarketAsset;
+  compact?: boolean;
+  showActions?: boolean;
+  zh?: boolean;
+}>) {
   const state = useMarketQuote(asset);
-  const change = state.status === "ready" ? getPriceChange(state.quote.points) : null;
-  const path = useMemo(
-    () => (state.status === "ready" ? buildSparklinePath(state.quote.points) : ""),
-    [state],
-  );
-  const isUp = (change?.absolute ?? 0) >= 0;
 
   return (
     <article className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
@@ -77,21 +81,26 @@ function MarketAssetCard({ asset, zh = false }: Readonly<{ asset: MarketAsset; z
           </div>
           <p className="mt-1 text-xs uppercase text-zinc-500">{asset.symbol}</p>
         </div>
-        <form action={deleteMarketAssetAction}>
-          <input name="id" type="hidden" value={asset.id} />
-          <ConfirmSubmitButton
-            className="h-8 rounded-md border border-red-200 px-3 text-xs font-medium text-red-700"
-            confirmLabel={zh ? "确认删除" : "Confirm delete"}
-            message={zh ? "删除这个关注标的吗？" : "Delete this watched asset?"}
-            pendingLabel={zh ? "删除中..." : "Deleting..."}
-          >
-            {zh ? "删除" : "Delete"}
-          </ConfirmSubmitButton>
-        </form>
+        {showActions ? (
+          <form action={deleteMarketAssetAction}>
+            <input name="id" type="hidden" value={asset.id} />
+            <ConfirmSubmitButton
+              className="h-8 rounded-md border border-red-200 px-3 text-xs font-medium text-red-700"
+              confirmLabel={zh ? "确认删除" : "Confirm delete"}
+              message={zh ? "删除这个关注标的吗？" : "Delete this watched asset?"}
+              pendingLabel={zh ? "删除中..." : "Deleting..."}
+            >
+              {zh ? "删除" : "Delete"}
+            </ConfirmSubmitButton>
+          </form>
+        ) : null}
       </div>
 
       {state.status === "loading" ? (
-        <div className="mt-4 h-28 animate-pulse rounded-md bg-zinc-100" aria-label={zh ? "行情加载中" : "Loading quote"} />
+        <div
+          aria-label={zh ? "行情加载中" : "Loading quote"}
+          className={`mt-4 animate-pulse rounded-md bg-zinc-100 ${compact ? "h-44" : "h-72"}`}
+        />
       ) : null}
 
       {state.status === "error" ? (
@@ -101,34 +110,8 @@ function MarketAssetCard({ asset, zh = false }: Readonly<{ asset: MarketAsset; z
       ) : null}
 
       {state.status === "ready" ? (
-        <div className="mt-4 grid gap-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="text-2xl font-semibold">
-                {formatMarketPrice(state.quote.latestPrice, state.quote.currency)}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                {zh ? "数据源" : "Source"}: {state.quote.provider}
-              </p>
-            </div>
-            {change ? (
-              <p className={`text-sm font-semibold ${isUp ? "text-teal-700" : "text-red-700"}`}>
-                {isUp ? "+" : ""}
-                {change.percent.toFixed(2)}%
-              </p>
-            ) : null}
-          </div>
-
-          <svg
-            aria-label={zh ? "近 30 天价格走势" : "30 day price trend"}
-            className="h-24 w-full overflow-visible"
-            preserveAspectRatio="none"
-            role="img"
-            viewBox="0 0 240 72"
-          >
-            <path d="M 0 72 L 240 72" fill="none" stroke="#e4e4e7" strokeWidth="1" />
-            <path d={path} fill="none" stroke={isUp ? "#0f766e" : "#b91c1c"} strokeLinecap="round" strokeWidth="3" />
-          </svg>
+        <div className="mt-4">
+          <MarketChart compact={compact} quote={state.quote} zh={zh} />
         </div>
       ) : null}
     </article>
@@ -137,19 +120,27 @@ function MarketAssetCard({ asset, zh = false }: Readonly<{ asset: MarketAsset; z
 
 export function MarketWatchlist({
   assets,
+  compact = false,
+  maxItems,
+  showActions = true,
   zh = false,
 }: Readonly<{
   assets: MarketAsset[];
+  compact?: boolean;
+  maxItems?: number;
+  showActions?: boolean;
   zh?: boolean;
 }>) {
+  const visibleAssets = typeof maxItems === "number" ? assets.slice(0, maxItems) : assets;
+
   if (assets.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center">
         <h2 className="text-lg font-semibold">{zh ? "还没有关注的行情" : "No watched assets yet"}</h2>
         <p className="mt-2 text-sm text-zinc-600">
           {zh
-            ? "添加股票代码或常见虚拟币代码后，这里会显示近 30 天价格走势。"
-            : "Add a stock ticker or common crypto symbol to see a 30 day trend."}
+            ? "在记账页添加股票代码或常见虚拟币代码后，这里会显示近 30 天 K 线。"
+            : "Add a stock ticker or common crypto symbol in Finance to see a 30 day candlestick chart."}
         </p>
       </div>
     );
@@ -157,8 +148,14 @@ export function MarketWatchlist({
 
   return (
     <section className="grid gap-4 md:grid-cols-2">
-      {assets.map((asset) => (
-        <MarketAssetCard asset={asset} key={asset.id} zh={zh} />
+      {visibleAssets.map((asset) => (
+        <MarketAssetCard
+          asset={asset}
+          compact={compact}
+          key={asset.id}
+          showActions={showActions}
+          zh={zh}
+        />
       ))}
     </section>
   );
