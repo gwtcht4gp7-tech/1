@@ -2,14 +2,14 @@ import type { MarketAssetType, MarketPoint, MarketQuote } from "@/types/market";
 
 const assetTypes = ["stock", "crypto"] as const;
 
-const cryptoIds: Record<string, { id: string; name: string; symbol: string }> = {
-  BTC: { id: "bitcoin", name: "Bitcoin", symbol: "BTC" },
-  ETH: { id: "ethereum", name: "Ethereum", symbol: "ETH" },
-  SOL: { id: "solana", name: "Solana", symbol: "SOL" },
-  BNB: { id: "binancecoin", name: "BNB", symbol: "BNB" },
-  XRP: { id: "ripple", name: "XRP", symbol: "XRP" },
-  ADA: { id: "cardano", name: "Cardano", symbol: "ADA" },
-  DOGE: { id: "dogecoin", name: "Dogecoin", symbol: "DOGE" },
+const cryptoAssets: Record<string, { name: string; symbol: string }> = {
+  BTC: { name: "Bitcoin", symbol: "BTC" },
+  ETH: { name: "Ethereum", symbol: "ETH" },
+  SOL: { name: "Solana", symbol: "SOL" },
+  BNB: { name: "BNB", symbol: "BNB" },
+  XRP: { name: "XRP", symbol: "XRP" },
+  ADA: { name: "Cardano", symbol: "ADA" },
+  DOGE: { name: "Dogecoin", symbol: "DOGE" },
 };
 
 export type MarketAssetInput = {
@@ -163,16 +163,16 @@ export async function fetchStockQuote(symbol: string): Promise<MarketQuote> {
 
 export async function fetchCryptoQuote(symbol: string): Promise<MarketQuote> {
   const normalized = symbol.trim().toUpperCase();
-  const asset = cryptoIds[normalized];
+  const asset = cryptoAssets[normalized];
 
   if (!asset) {
     throw new Error("Unsupported crypto symbol. Try BTC, ETH, SOL, BNB, XRP, ADA, or DOGE.");
   }
 
-  const url = new URL(`https://api.coingecko.com/api/v3/coins/${asset.id}/market_chart`);
-  url.searchParams.set("vs_currency", "usd");
-  url.searchParams.set("days", "30");
-  url.searchParams.set("interval", "daily");
+  const url = new URL("https://min-api.cryptocompare.com/data/v2/histoday");
+  url.searchParams.set("fsym", asset.symbol);
+  url.searchParams.set("tsym", "USD");
+  url.searchParams.set("limit", "30");
 
   const response = await fetch(url, {
     headers: {
@@ -186,18 +186,25 @@ export async function fetchCryptoQuote(symbol: string): Promise<MarketQuote> {
   }
 
   const data = (await response.json()) as {
-    prices?: [number, number][];
+    Data?: {
+      Data?: Array<{
+        close?: number;
+        time?: number;
+      }>;
+    };
+    Message?: string;
+    Response?: string;
   };
-  const points = (data.prices ?? [])
-    .map(([timestamp, price]) => ({
-      date: new Date(timestamp).toISOString().slice(0, 10),
-      price,
+  const points = (data.Data?.Data ?? [])
+    .map((item) => ({
+      date: new Date((item.time ?? 0) * 1000).toISOString().slice(0, 10),
+      price: item.close ?? Number.NaN,
     }))
     .filter((point) => Number.isFinite(point.price))
     .slice(-30);
 
-  if (points.length === 0) {
-    throw new Error("No crypto data found.");
+  if (data.Response === "Error" || points.length === 0) {
+    throw new Error(data.Message || "No crypto data found.");
   }
 
   return {
@@ -205,7 +212,7 @@ export async function fetchCryptoQuote(symbol: string): Promise<MarketQuote> {
     currency: "USD",
     latestPrice: points.at(-1)?.price ?? 0,
     points,
-    provider: "CoinGecko",
+    provider: "CryptoCompare",
     symbol: asset.symbol,
     type: "crypto",
   };

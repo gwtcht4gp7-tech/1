@@ -103,9 +103,9 @@ npm run db:seed
 
 The finance market watchlist stores only the user's watched symbols locally.
 Live prices are fetched on demand from public market data providers. Stock
-symbols default to US tickers such as `AAPL` or `TSLA`; crypto supports common
-symbols such as `BTC`, `ETH`, and `SOL`. Market data requires network access and
-may be delayed or unavailable.
+symbols default to US tickers such as `AAPL` or `TSLA`; crypto uses
+CryptoCompare and supports common symbols such as `BTC`, `ETH`, and `SOL`.
+Market data requires network access and may be delayed or unavailable.
 
 `prisma migrate dev` currently returns an empty `Schema engine error` in this
 Windows and Node 24 environment when applying SQLite migrations. The migration
