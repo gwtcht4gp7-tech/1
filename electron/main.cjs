@@ -9,6 +9,7 @@ const { scrypt } = require("node:crypto");
 const { promisify } = require("node:util");
 
 const scryptAsync = promisify(scrypt);
+let mainWindow;
 let serverProcess;
 
 function getAppRoot() {
@@ -370,6 +371,7 @@ function createWindow(url) {
     shell.openExternal(targetUrl);
     return { action: "deny" };
   });
+  mainWindow = window;
   window.loadURL(url);
 }
 
@@ -378,6 +380,19 @@ const hasLock = app.requestSingleInstanceLock();
 if (!hasLock) {
   app.quit();
 }
+
+app.on("second-instance", () => {
+  if (!mainWindow) {
+    return;
+  }
+
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+
+  mainWindow.show();
+  mainWindow.focus();
+});
 
 app.whenReady().then(async () => {
   try {

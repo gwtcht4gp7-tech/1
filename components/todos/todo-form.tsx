@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { TodoActionState } from "@/app/actions/todos";
 import { createTodoAction, updateTodoAction } from "@/app/actions/todos";
-import { SubmitButton } from "@/components/form-buttons";
 import { formatDateInput, todoPriorities } from "@/lib/domain";
 import type { TodoFormValues } from "@/types/todos";
 
@@ -19,13 +19,37 @@ export function TodoForm({
   initialValues?: TodoFormValues;
   zh?: boolean;
 }>) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   const action = mode === "create" ? createTodoAction : updateTodoAction;
-  const [state, formAction] = useActionState<TodoActionState, FormData>(action, {});
-  const dueDate =
-    initialValues?.dueDate ?? formatDateInput(new Date());
+  const [state, formAction, isPending] = useActionState<TodoActionState, FormData>(action, {});
+  const [timedOut, setTimedOut] = useState(false);
+  const dueDate = initialValues?.dueDate ?? formatDateInput(new Date());
+
+  useEffect(() => {
+    if (!isPending) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setTimedOut(true), 15000);
+
+    return () => window.clearTimeout(timer);
+  }, [isPending]);
+
+  useEffect(() => {
+    if (!state.success) {
+      return;
+    }
+
+    if (mode === "create") {
+      formRef.current?.reset();
+    }
+
+    router.refresh();
+  }, [mode, router, state.success]);
 
   return (
-    <form action={formAction} className="grid gap-4">
+    <form action={formAction} className="grid gap-4" onSubmit={() => setTimedOut(false)} ref={formRef}>
       {initialValues?.id ? <input name="id" type="hidden" value={initialValues.id} /> : null}
 
       {state.error ? (
@@ -36,6 +60,11 @@ export function TodoForm({
       {state.success ? (
         <p className="rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
           {state.success}
+        </p>
+      ) : null}
+      {timedOut ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800" role="alert">
+          {zh ? "保存时间过长。请重试，或刷新页面后再试。" : "Saving is taking too long. Try again or refresh the page."}
         </p>
       ) : null}
 
@@ -77,11 +106,23 @@ export function TodoForm({
         </label>
       </div>
 
-      <SubmitButton
+      <button
         className="h-10 rounded-md bg-teal-700 px-4 text-sm font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-zinc-400"
+        disabled={isPending && !timedOut}
+        type="submit"
       >
-        {mode === "create" ? (zh ? "新增待办" : "Add todo") : zh ? "保存修改" : "Save changes"}
-      </SubmitButton>
+        {isPending && !timedOut
+          ? zh
+            ? "保存中..."
+            : "Saving..."
+          : mode === "create"
+            ? zh
+              ? "新增待办"
+              : "Add todo"
+            : zh
+              ? "保存修改"
+              : "Save changes"}
+      </button>
     </form>
   );
 }

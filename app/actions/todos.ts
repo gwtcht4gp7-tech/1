@@ -51,12 +51,16 @@ export async function createTodoAction(
     return { error: parsed.error };
   }
 
-  await prisma.todo.create({
-    data: {
-      ...parsed.value,
-      userId,
-    },
-  });
+  try {
+    await prisma.todo.create({
+      data: {
+        ...parsed.value,
+        userId,
+      },
+    });
+  } catch {
+    return { error: "Todo could not be saved. Please try again." };
+  }
 
   revalidateTodos();
   return { success: "Todo created." };
@@ -88,10 +92,16 @@ export async function updateTodoAction(
     return { error: parsed.error };
   }
 
-  const result = await prisma.todo.updateMany({
-    where: { id, userId },
-    data: parsed.value,
-  });
+  let result;
+
+  try {
+    result = await prisma.todo.updateMany({
+      where: { id, userId },
+      data: parsed.value,
+    });
+  } catch {
+    return { error: "Todo could not be updated. Please try again." };
+  }
 
   if (result.count === 0) {
     return { error: "Todo was not found." };
@@ -110,10 +120,14 @@ export async function toggleTodoAction(formData: FormData) {
     return;
   }
 
-  await prisma.todo.updateMany({
-    where: { id, userId },
-    data: { completed },
-  });
+  try {
+    await prisma.todo.updateMany({
+      where: { id, userId },
+      data: { completed },
+    });
+  } catch {
+    return;
+  }
 
   revalidateTodos();
 }
@@ -126,9 +140,13 @@ export async function deleteTodoAction(formData: FormData) {
     return;
   }
 
-  await prisma.todo.deleteMany({
-    where: { id, userId },
-  });
+  try {
+    await prisma.todo.deleteMany({
+      where: { id, userId },
+    });
+  } catch {
+    return;
+  }
 
   revalidateTodos();
 }
