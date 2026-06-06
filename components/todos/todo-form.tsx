@@ -25,6 +25,7 @@ export function TodoForm({
   const [state, formAction, isPending] = useActionState<TodoActionState, FormData>(action, {});
   const [timedOut, setTimedOut] = useState(false);
   const dueDate = initialValues?.dueDate ?? formatDateInput(new Date());
+  const showTimedOut = timedOut && isPending && !state.error && !state.success;
 
   useEffect(() => {
     if (!isPending) {
@@ -62,7 +63,7 @@ export function TodoForm({
           {state.success}
         </p>
       ) : null}
-      {timedOut ? (
+      {showTimedOut ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800" role="alert">
           {zh ? "保存时间过长。请重试，或刷新页面后再试。" : "Saving is taking too long. Try again or refresh the page."}
         </p>
